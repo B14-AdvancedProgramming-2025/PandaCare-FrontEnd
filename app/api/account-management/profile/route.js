@@ -28,22 +28,38 @@ async function getUserIdByEmail(email, authHeader) {
       },
     });
 
+    const responseText = await response.text(); // Get response as text first
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Failed to look up user by email" }));
-      console.error(`Failed to find user by email ${email}: ${response.status} - ${errorData.message}`);
+      console.error(`Failed to find user by email ${email}: ${response.status}. Response text: ${responseText}`);
+      // Attempt to parse errorData as JSON from responseText if possible, otherwise use a default message.
+      let errorDetail = "Failed to look up user by email";
+      try {
+        const errorJson = JSON.parse(responseText);
+        errorDetail = errorJson.message || errorDetail;
+      } catch (e) {
+        // Ignore if responseText is not JSON, errorDetail remains the default
+      }
+      console.error(`Error detail: ${errorDetail}`);
       return null;
     }
 
-    const userData = await response.json();
-    // Assumed the response object has an 'id' field for the user ID.
-    // If the endpoint returns the user object directly and it's not nested,
-    // and if the user object itself is the ID (less common), adjust accordingly.
-    // For Spring Data REST, if findByEmail returns a single user, userData might be the user object.
-    if (!userData || !userData.id) {
-      console.error(`User data for email ${email} does not contain an 'id' field or is invalid.`);
+    try {
+      const userData = JSON.parse(responseText); // Parse the text
+      // Assumed the response object has an 'id' field for the user ID.
+      // If the endpoint returns the user object directly and it's not nested,
+      // and if the user object itself is the ID (less common), adjust accordingly.
+      // For Spring Data REST, if findByEmail returns a single user, userData might be the user object.
+      if (!userData || typeof userData.id === 'undefined') { // Check for undefined explicitly if id can be 0 or other falsy values
+        console.error(`User data for email ${email} does not contain an 'id' field or is invalid. Received: ${responseText}`);
+        return null;
+      }
+      return userData.id;
+    } catch (parseError) {
+      console.error(`Error parsing JSON for email ${email}: ${parseError.message}. Received text: ${responseText}`);
       return null;
     }
-    return userData.id;
+
   } catch (error) {
     console.error(`Error fetching user ID by email ${email}:`, error.message);
     return null;
