@@ -90,7 +90,10 @@ export default function PacilianDashboard() {
             return;
         }
 
-        loadData();
+        // Load data based on active tab
+        if (activeTab === 'consultations') {
+            loadConsultations();
+        }
     }, [mounted, activeTab, router]);
 
     // Format datetime for backend (yyyy-MM-dd HH:mm)
