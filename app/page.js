@@ -130,12 +130,38 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold mb-4">Welcome, {userData?.name || 'User'}!</h2>
             
+            {/* Scheduling Services Buttons */}
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold mb-6">Scheduling Services</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <Link href="/scheduling/caregiver" className="block">
+                  <div className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <h4 className="text-xl font-bold">Caregiver Dashboard</h4>
+                    <p className="mt-2">Manage your schedules and consultations</p>
+                  </div>
+                </Link>
+                
+                <Link href="/scheduling/pacilian" className="block">
+                  <div className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 8a4 4 0 11-8 0 4 4 0 018 0zm-4 8a4 4 0 11-8 0 4 4 0 018 0zm8-8a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <h4 className="text-xl font-bold">Pacilian Dashboard</h4>
+                    <p className="mt-2">Book appointments and find caregivers</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
             {/* Financial Services Buttons */}
             <div className="mt-8">
               <h3 className="text-xl font-semibold mb-6">Financial Services</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Link href="/payment-and-donation/topup" className="block">
-                  <div className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
+                  <div className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
@@ -145,7 +171,7 @@ export default function Home() {
                 </Link>
                 
                 <Link href="/payment-and-donation/transfer" className="block">
-                  <div className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
+                  <div className="bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
