@@ -1,21 +1,93 @@
 import { NextResponse } from "next/server";
 
+// Helper function to decode JWT payload
+function decodeJwtPayload(token) {
+  try {
+    const payloadPart = token.split('.')[1];
+    if (!payloadPart) {
+      throw new Error("Invalid JWT token format: Missing payload part.");
+    }
+    // Convert base64url to base64
+    const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    // Decode base64 and parse JSON (assuming Node.js environment with Buffer)
+    const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("Failed to decode JWT payload:", error.message);
+    return null;
+  }
+}
+
+// Helper function to get user ID by email
+async function getUserIdByEmail(email, authHeader) {
+  try {
+    const userLookupUrl = `http://localhost:8080/api/account-management/users/search/findByEmail?email=${encodeURIComponent(email)}`;
+    const response = await fetch(userLookupUrl, {
+      headers: {
+        Authorization: authHeader,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: "Failed to look up user by email" }));
+      console.error(`Failed to find user by email ${email}: ${response.status} - ${errorData.message}`);
+      return null;
+    }
+
+    const userData = await response.json();
+    // Assumed the response object has an 'id' field for the user ID.
+    // If the endpoint returns the user object directly and it's not nested,
+    // and if the user object itself is the ID (less common), adjust accordingly.
+    // For Spring Data REST, if findByEmail returns a single user, userData might be the user object.
+    if (!userData || !userData.id) {
+      console.error(`User data for email ${email} does not contain an 'id' field or is invalid.`);
+      return null;
+    }
+    return userData.id;
+  } catch (error) {
+    console.error(`Error fetching user ID by email ${email}:`, error.message);
+    return null;
+  }
+}
+
 // GET /api/account-management/profile
 export async function GET(request) {
   try {
-    const userId = request.headers.get("x-user-id");
-    if (!userId) {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
+        { error: "Authorization header is missing or not Bearer type" },
+        { status: 401 }
       );
     }
 
+    const token = authHeader.split(" ")[1];
+    const decodedPayload = decodeJwtPayload(token);
+
+    if (!decodedPayload || !decodedPayload.sub) {
+      return NextResponse.json(
+        { error: "Invalid token or missing user identifier (sub)" },
+        { status: 401 }
+      );
+    }
+    const email = decodedPayload.sub; // This is the email
+
+    // Step 1: Get the actual userId using the email
+    const actualUserId = await getUserIdByEmail(email, authHeader);
+
+    if (!actualUserId) {
+      return NextResponse.json(
+        { error: `User ID not found for email: ${email}. Please ensure the email is registered and the lookup endpoint is correct.` },
+        { status: 404 }
+      );
+    }
+
+    // Step 2: Use actualUserId to fetch the profile
     const response = await fetch(
-      `http://localhost:8080/api/profile/${userId}`,
+      `http://localhost:8080/api/profile/${actualUserId}`,
       {
         headers: {
-          Authorization: `Bearer ${request.headers.get("authorization")}`,
+          Authorization: authHeader,
         },
       }
     );
@@ -31,6 +103,7 @@ export async function GET(request) {
 
     return NextResponse.json(data.result);
   } catch (error) {
+    console.error("GET Profile Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }
@@ -41,23 +114,45 @@ export async function GET(request) {
 // PUT /api/account-management/profile
 export async function PUT(request) {
   try {
-    const userId = request.headers.get("x-user-id");
-    if (!userId) {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
+        { error: "Authorization header is missing or not Bearer type" },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decodedPayload = decodeJwtPayload(token);
+
+    if (!decodedPayload || !decodedPayload.sub) {
+      return NextResponse.json(
+        { error: "Invalid token or missing user identifier (sub)" },
+        { status: 401 }
+      );
+    }
+    const email = decodedPayload.sub; // This is the email
+
+    // Step 1: Get the actual userId using the email
+    const actualUserId = await getUserIdByEmail(email, authHeader);
+
+    if (!actualUserId) {
+      return NextResponse.json(
+        { error: `User ID not found for email: ${email}. Please ensure the email is registered and the lookup endpoint is correct.` },
+        { status: 404 }
       );
     }
 
     const body = await request.json();
 
+    // Step 2: Use actualUserId to update the profile
     const response = await fetch(
-      `http://localhost:8080/api/profile/${userId}`,
+      `http://localhost:8080/api/profile/${actualUserId}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${request.headers.get("authorization")}`,
+          Authorization: authHeader,
         },
         body: JSON.stringify(body),
       }
@@ -74,6 +169,7 @@ export async function PUT(request) {
 
     return NextResponse.json(data.result);
   } catch (error) {
+    console.error("PUT Profile Error:", error);
     return NextResponse.json(
       { error: "Failed to update profile" },
       { status: 500 }
@@ -84,20 +180,42 @@ export async function PUT(request) {
 // DELETE /api/account-management/profile
 export async function DELETE(request) {
   try {
-    const userId = request.headers.get("x-user-id");
-    if (!userId) {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
+        { error: "Authorization header is missing or not Bearer type" },
+        { status: 401 }
       );
     }
 
+    const token = authHeader.split(" ")[1];
+    const decodedPayload = decodeJwtPayload(token);
+
+    if (!decodedPayload || !decodedPayload.sub) {
+      return NextResponse.json(
+        { error: "Invalid token or missing user identifier (sub)" },
+        { status: 401 }
+      );
+    }
+    const email = decodedPayload.sub; // This is the email
+
+    // Step 1: Get the actual userId using the email
+    const actualUserId = await getUserIdByEmail(email, authHeader);
+
+    if (!actualUserId) {
+      return NextResponse.json(
+        { error: `User ID not found for email: ${email}. Please ensure the email is registered and the lookup endpoint is correct.` },
+        { status: 404 }
+      );
+    }
+
+    // Step 2: Use actualUserId to delete the profile
     const response = await fetch(
-      `http://localhost:8080/api/profile/${userId}`,
+      `http://localhost:8080/api/profile/${actualUserId}`,
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${request.headers.get("authorization")}`,
+          Authorization: authHeader,
         },
       }
     );
@@ -113,6 +231,7 @@ export async function DELETE(request) {
 
     return NextResponse.json(data.result);
   } catch (error) {
+    console.error("DELETE Profile Error:", error);
     return NextResponse.json(
       { error: "Failed to delete profile" },
       { status: 500 }

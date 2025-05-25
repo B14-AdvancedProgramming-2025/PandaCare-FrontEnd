@@ -7,6 +7,7 @@ export default function AccountManagement() {
   const router = useRouter();
   const [userData, setUserData] = useState(null);
   const [consultationHistory, setConsultationHistory] = useState([]);
+  const [detailedConsultationHistory, setDetailedConsultationHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -14,9 +15,7 @@ export default function AccountManagement() {
     address: "",
     phone: "",
     type: "",
-    // Pacilian specific fields
     medicalHistory: [],
-    // Caregiver specific fields
     specialty: "",
     workingSchedule: [],
   });
@@ -28,10 +27,12 @@ export default function AccountManagement() {
 
   const fetchUserData = async () => {
     try {
+      const token = localStorage.getItem("token");
+
+      console.log("Token:", token);  // Cek isi token
       const response = await fetch("/api/account-management/profile", {
         headers: {
-          "x-user-id": localStorage.getItem("userId"),
-          authorization: `Bearer ${localStorage.getItem("token")}`,
+          authorization: `Bearer ${token}`,
         },
       });
 
@@ -49,7 +50,8 @@ export default function AccountManagement() {
         type: data.type || "",
         medicalHistory: data.medicalHistory || [],
         specialty: data.specialty || "",
-        workingSchedule: data.workingSchedule || [],
+        // workingSchedule is populated from userData for display purposes
+        workingSchedule: data.workingSchedule || [], 
       });
       setLoading(false);
     } catch (error) {
@@ -61,18 +63,46 @@ export default function AccountManagement() {
 
   const fetchConsultationHistory = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("/api/account-management/consultations", {
         headers: {
-          "x-user-id": localStorage.getItem("userId"),
-          authorization: `Bearer ${localStorage.getItem("token")}`,
+          authorization: `Bearer ${token}`,
         },
       });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to fetch consultation history:", response.status, errorText);
+        throw new Error(`Failed to fetch consultation history: ${response.status}`);
+    }
       const data = await response.json();
       setConsultationHistory(data);
     } catch (error) {
       console.error("Error fetching consultation history:", error);
+      setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    const augmentAndSetHistory = async () => {
+      if (userData && consultationHistory && consultationHistory.length > 0) {
+        setLoading(true);
+
+        const augmented = consultationHistory.map((consultation) => {
+          const partnerId = userData.type === "PACILIAN" ? consultation.caregiverId : consultation.pacilianId;
+          const partnerDisplay = partnerId ? `Partner ID: ${partnerId}` : "N/A";
+          return { ...consultation, partnerName: partnerDisplay };
+        });
+
+        setDetailedConsultationHistory(augmented);
+        setLoading(false);
+      } else if (consultationHistory) {
+        setDetailedConsultationHistory([]);
+        if (userData) setLoading(false);
+      }
+    };
+
+    augmentAndSetHistory();
+  }, [userData, consultationHistory]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -81,6 +111,9 @@ export default function AccountManagement() {
       [name]: value,
     }));
   };
+
+  // Remove handleWorkingScheduleChange, addWorkingSchedule, removeWorkingSchedule functions
+  // as workingSchedule is now read-only in this form.
 
   const handleArrayInputChange = (e, field) => {
     const { value } = e.target;
@@ -93,27 +126,26 @@ export default function AccountManagement() {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      // Ensure we're not sending NIK in the update request
       const updateData = {
         name: formData.name,
         address: formData.address,
         phone: formData.phone,
-        type: formData.type,
+        type: formData.type, 
       };
 
-      // Add type-specific fields
       if (userData?.type === "PACILIAN") {
         updateData.medicalHistory = formData.medicalHistory;
       } else if (userData?.type === "CAREGIVER") {
         updateData.specialty = formData.specialty;
-        updateData.workingSchedule = formData.workingSchedule;
+        // Do not include workingSchedule in the update payload 
+        // as it is read-only in this form.
+        // updateData.workingSchedule = formData.workingSchedule; // This line is removed/commented out
       }
 
       const response = await fetch("/api/account-management/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": localStorage.getItem("userId"),
           authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(updateData),
@@ -147,7 +179,6 @@ export default function AccountManagement() {
         const response = await fetch("/api/account-management/profile", {
           method: "DELETE",
           headers: {
-            "x-user-id": localStorage.getItem("userId"),
             authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
@@ -168,279 +199,155 @@ export default function AccountManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <p>Loading...</p>;
+  }
+
+  if (!userData) {
+    return <p>No user data found.</p>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">
-          Account Management
-        </h1>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Account Management</h1>
 
-        {/* Profile Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800">
-              Profile Information
-            </h2>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              {isEditing ? "Cancel" : "Edit Profile"}
-            </button>
-          </div>
-
-          {isEditing ? (
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
+      {/* Profile Section */}
+      <div className="mb-8 p-4 border rounded shadow">
+        <h2 className="text-xl font-semibold mb-2">Profile</h2>
+        {isEditing ? (
+          <form onSubmit={handleUpdateProfile}>
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700">Name:</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700">Address:</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700">Phone:</label>
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+            {userData.type === "PACILIAN" && (
+              <div className="mb-2">
+                <label className="block text-sm font-medium text-gray-700">Medical History (comma-separated):</label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                  name="medicalHistory"
+                  value={formData.medicalHistory.join(", ")}
+                  onChange={(e) => handleArrayInputChange(e, "medicalHistory")}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Address
-                </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                />
-              </div>
-
-              {/* Pacilian specific fields */}
-              {userData?.type === "PACILIAN" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Medical History (comma-separated)
-                  </label>
+            )}
+            {userData.type === "CAREGIVER" && (
+              <>
+                <div className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Specialty:</label>
                   <input
                     type="text"
-                    value={formData.medicalHistory?.join(", ")}
-                    onChange={(e) =>
-                      handleArrayInputChange(e, "medicalHistory")
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    name="specialty"
+                    value={formData.specialty}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   />
                 </div>
-              )}
-
-              {/* Caregiver specific fields */}
-              {userData?.type === "CAREGIVER" && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Specialty
-                    </label>
-                    <input
-                      type="text"
-                      name="specialty"
-                      value={formData.specialty}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Working Schedule
-                    </label>
-                    <div className="mt-2 space-y-2">
-                      {formData.workingSchedule?.map((schedule, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center space-x-2"
-                        >
-                          <input
-                            type="text"
-                            value={schedule}
-                            onChange={(e) => {
-                              const newSchedule = [...formData.workingSchedule];
-                              newSchedule[index] = e.target.value;
-                              setFormData((prev) => ({
-                                ...prev,
-                                workingSchedule: newSchedule,
-                              }));
-                            }}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                          />
-                        </div>
+                {/* Display Working Schedule as read-only */}
+                <div className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Working Schedule (Read-only):</label>
+                  {formData.workingSchedule && formData.workingSchedule.length > 0 ? (
+                    <ul className="list-disc pl-5 mt-1 text-sm text-gray-900">
+                      {formData.workingSchedule.map((schedule, index) => (
+                        <li key={schedule.id || index}>
+                          {schedule.startTime} - {schedule.endTime} (Status: {schedule.status}, Available: {schedule.available ? 'Yes' : 'No'})
+                        </li>
                       ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-              >
-                Save Changes
-              </button>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">Name</h3>
-                <p className="mt-1 text-gray-900">{userData?.name}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">Email</h3>
-                <p className="mt-1 text-gray-900">{userData?.email}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">NIK</h3>
-                <p className="mt-1 text-gray-900">{userData?.nik}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">Phone</h3>
-                <p className="mt-1 text-gray-900">{userData?.phone}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">Address</h3>
-                <p className="mt-1 text-gray-900">{userData?.address}</p>
-              </div>
-
-              {/* Pacilian specific fields */}
-              {userData?.type === "PACILIAN" && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700">
-                    Medical History
-                  </h3>
-                  <div className="mt-1">
-                    {userData?.medicalHistory?.length > 0 ? (
-                      <ul className="list-disc list-inside text-gray-900">
-                        {userData.medicalHistory.map((item, index) => (
-                          <li key={index}>{item}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-600">
-                        No medical history recorded
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Caregiver specific fields */}
-              {userData?.type === "CAREGIVER" && (
-                <>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700">
-                      Specialty
-                    </h3>
-                    <p className="mt-1 text-gray-900">{userData?.specialty}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700">
-                      Working Schedule
-                    </h3>
-                    <div className="mt-1">
-                      {userData?.workingSchedule?.length > 0 ? (
-                        <ul className="list-disc list-inside text-gray-900">
-                          {userData.workingSchedule.map((schedule, index) => (
-                            <li key={index}>{schedule}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No working schedule set</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Consultation History Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-            Consultation History
-          </h2>
-          <div className="space-y-4">
-            {consultationHistory.length > 0 ? (
-              consultationHistory.map((consultation, index) => (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {userData?.type === "CAREGIVER" ? "Patient" : "Doctor"}:{" "}
-                        {consultation.partnerName}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Date:{" "}
-                        {new Date(
-                          consultation.consultationTime
-                        ).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Time:{" "}
-                        {new Date(
-                          consultation.consultationTime
-                        ).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                  {consultation.notes && (
-                    <p className="mt-2 text-sm text-gray-700">
-                      Notes: {consultation.notes}
-                    </p>
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">N/A</p>
                   )}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-600 text-center">
-                No consultation history available.
-              </p>
+              </>
             )}
-          </div>
-        </div>
-
-        {/* Delete Account Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-            Danger Zone
-          </h2>
-          <p className="text-gray-700 mb-4">
-            Once you delete your account, there is no going back. Please be
-            certain.
-          </p>
-          <button
-            onClick={handleDeleteAccount}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Delete Account
-          </button>
-        </div>
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded mr-2">Save Changes</button>
+            <button type="button" onClick={() => setIsEditing(false)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
+          </form>
+        ) : (
+          <>
+            <p><strong>Name:</strong> {userData.name}</p>
+            <p><strong>Email:</strong> {userData.email}</p>
+            <p><strong>Address:</strong> {userData.address}</p>
+            <p><strong>Phone:</strong> {userData.phone}</p>
+            <p><strong>Type:</strong> {userData.type}</p>
+            {userData.type === "PACILIAN" && (
+              <p><strong>Medical History:</strong> {userData.medicalHistory?.join(", ") || "N/A"}</p>
+            )}
+            {userData.type === "CAREGIVER" && (
+              <>
+                <p><strong>Specialty:</strong> {userData.specialty || "N/A"}</p>
+                <div><strong>Working Schedule:</strong>
+                  {userData.workingSchedule && userData.workingSchedule.length > 0 ? (
+                    <ul className="list-disc pl-5">
+                      {userData.workingSchedule.map((schedule, index) => (
+                        <li key={schedule.id || index}> {/* Use schedule.id if available for key */}
+                          {/* Assuming startTime and endTime are already formatted strings from backend DTO */}
+                          {schedule.startTime} - {schedule.endTime} (Status: {schedule.status}, Available: {schedule.available ? 'Yes' : 'No'})
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>N/A</p>
+                  )}
+                </div>
+              </>
+            )}
+            <button onClick={() => setIsEditing(true)} className="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Edit Profile</button>
+          </>
+        )}
       </div>
+
+      {/* Consultation History Section */}
+      <div className="mb-8 p-4 border rounded shadow">
+        <h2 className="text-xl font-semibold mb-2">Consultation History</h2>
+        {detailedConsultationHistory.length > 0 ? (
+          <ul>
+            {detailedConsultationHistory.map((consultation, index) => (
+              <li key={index} className="mb-4 p-2 border-b">
+                <p><strong>{consultation.partnerName}</strong></p> {/* Changed to display partner ID string */}
+                <p>Start Time: {new Date(consultation.startTime).toLocaleString()}</p>
+                <p>End Time: {new Date(consultation.endTime).toLocaleString()}</p>
+                <p>Status: {consultation.status}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No consultation history found.</p>
+        )}
+      </div>
+      {/* ... existing delete account button ... */}
+      <button
+        onClick={handleDeleteAccount}
+        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+      >
+        Delete Account
+      </button>
     </div>
   );
 }

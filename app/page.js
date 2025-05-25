@@ -108,15 +108,23 @@ export default function Home() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">PandaCare Home</h1>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Logout
-          </button>
+          <div className="flex space-x-4">
+            <Link href="/account-management">
+              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Profile
+              </button>
+            </Link>
+            <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
-      
+
+
       <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
         {tokenError && (
           <div className="mb-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">

@@ -59,7 +59,13 @@ export default function Authentication() {
       
       // Optionally store expiry date
       localStorage.setItem('tokenExpiry', expiryDate);
-      
+
+      const userId = responseData.data.id; // ambil userId
+      localStorage.setItem("userId", userId); // simpan userId
+      console.log("User ID saved:", userId);
+      console.log("User ID in localStorage:", localStorage.getItem("userId"));
+
+
       // Redirect to home page
       router.push('/');
     } catch (err) {
