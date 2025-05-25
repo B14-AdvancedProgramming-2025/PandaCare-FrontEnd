@@ -133,34 +133,14 @@ export default function Home() {
             {/* Financial Services Buttons */}
             <div className="mt-8">
               <h3 className="text-xl font-semibold mb-6">Financial Services</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Link href="/payment-and-donation/topup" className="block">
-                  <div className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <h4 className="text-xl font-bold">Top Up</h4>
-                    <p className="mt-2">Add funds to your wallet</p>
-                  </div>
-                </Link>
-                
-                <Link href="/payment-and-donation/transfer" className="block">
-                  <div className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    <h4 className="text-xl font-bold">Transfer</h4>
-                    <p className="mt-2">Send funds to others</p>
-                  </div>
-                </Link>
-                
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <Link href="/payment-and-donation" className="block">
                   <div className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                     <h4 className="text-xl font-bold">Wallet</h4>
-                    <p className="mt-2">View your wallet details</p>
+                    <p className="mt-2">Manage your funds and transactions</p>
                   </div>
                 </Link>
               </div>
