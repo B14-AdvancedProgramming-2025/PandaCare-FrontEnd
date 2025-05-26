@@ -13,11 +13,11 @@ export default function Home() {
   useEffect(() => {
     // Ensure client-side execution for localStorage
     if (typeof window === 'undefined') return;
-    
+
     // Check if user is logged in
     const token = localStorage.getItem('token');
     console.log("Retrieved token:", token ? token.substring(0, 15) + '...' : 'null');
-    
+
     if (!token) {
       router.push('/authentication');
       return;
@@ -33,26 +33,26 @@ export default function Home() {
         setLoading(false);
         return;
       }
-      
+
       // JWT tokens are in format: header.payload.signature
       const parts = token.split('.');
       console.log("Token parts count:", parts.length);
-      
+
       if (parts.length !== 3) {
         setUserData({ name: 'User', role: 'USER' });
         setTokenError(`Token has ${parts.length} parts instead of 3.`);
         setLoading(false);
         return;
       }
-      
+
       // Base64Url decode the payload
       const payload = parts[1];
-      
+
       try {
         // More resilient base64 decoding
         const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
         const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
-        
+
         // First try simple decoding
         let jsonPayload;
         try {
@@ -66,10 +66,10 @@ export default function Home() {
               .join('')
           );
         }
-        
+
         const decodedData = JSON.parse(jsonPayload);
         console.log("Decoded data:", decodedData);
-        
+
         // Set user data from token
         setUserData({
           name: decodedData.name || decodedData.sub || 'User',
@@ -116,7 +116,7 @@ export default function Home() {
           </button>
         </div>
       </header>
-      
+
       <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
         {tokenError && (
           <div className="mb-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
@@ -125,11 +125,11 @@ export default function Home() {
             <p className="mt-2 text-sm">You can continue using the app, but some features may be limited.</p>
           </div>
         )}
-        
+
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold mb-4">Welcome, {userData?.name || 'User'}!</h2>
-            
+
             {/* Scheduling Services Buttons */}
             <div className="mt-8">
               <h3 className="text-xl font-semibold mb-6">Scheduling Services</h3>
@@ -143,11 +143,11 @@ export default function Home() {
                     <p className="mt-2">Manage your schedules and consultations</p>
                   </div>
                 </Link>
-                
+
                 <Link href="/scheduling/pacilian" className="block">
                   <div className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 8a4 4 0 11-8 0 4 4 0 018 0zm-4 8a4 4 0 11-8 0 4 4 0 018 0zm8-8a4 4 0 11-8 0 4 4 0 018 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                     <h4 className="text-xl font-bold">Pacilian Dashboard</h4>
                     <p className="mt-2">Book appointments and find caregivers</p>
@@ -169,7 +169,7 @@ export default function Home() {
                     <p className="mt-2">Add funds to your wallet</p>
                   </div>
                 </Link>
-                
+
                 <Link href="/payment-and-donation/transfer" className="block">
                   <div className="bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,7 +179,7 @@ export default function Home() {
                     <p className="mt-2">Send funds to others</p>
                   </div>
                 </Link>
-                
+
                 <Link href="/payment-and-donation" className="block">
                   <div className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-8 text-center transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
