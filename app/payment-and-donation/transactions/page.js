@@ -23,15 +23,13 @@ export default function Transactions() {
     }
 
     // Fetch transaction history with pagination
-    const fetchTransactions = async () => {
+    const fetchTransactions = async (page = 0) => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/wallet/transactions?page=${currentPage}&size=${pageSize}`, {
-          method: 'GET',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/transactions?page=${page}&size=${pageSize}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          },
         });
 
         if (!response.ok) {
@@ -157,17 +155,17 @@ export default function Transactions() {
                               {formatDate(transaction.timestamp)}
                             </span>
                           </div>
-                          
+
                           <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                            {transaction.type === 'TOPUP' 
-                              ? `Top Up via ${transaction.provider}` 
+                            {transaction.type === 'TOPUP'
+                              ? `Top Up via ${transaction.provider}`
                               : `Transfer ${transaction.senderName} → ${transaction.receiverName}`}
                           </h3>
-                          
+
                           <p className="text-gray-600 text-sm mb-2">
                             {transaction.description}
                           </p>
-                          
+
                           <div className={`font-bold text-lg ${delta.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                             {delta.isPositive ? '+' : '-'} Rp {delta.amount.toLocaleString('id-ID')}
                           </div>
@@ -177,7 +175,7 @@ export default function Transactions() {
                   );
                 })}
               </div>
-              
+
               {/* Pagination Controls */}
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                 <div className="flex items-center justify-between">
@@ -188,22 +186,20 @@ export default function Transactions() {
                     <button
                       onClick={() => handlePageChange(0)}
                       disabled={currentPage === 0}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === 0 
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                      className={`px-3 py-1 rounded ${currentPage === 0
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                           : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                      }`}
+                        }`}
                     >
                       First
                     </button>
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 0}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === 0 
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                      className={`px-3 py-1 rounded ${currentPage === 0
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                           : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                      }`}
+                        }`}
                     >
                       Previous
                     </button>
@@ -213,22 +209,20 @@ export default function Transactions() {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages - 1}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === totalPages - 1
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                      className={`px-3 py-1 rounded ${currentPage === totalPages - 1
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                           : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                      }`}
+                        }`}
                     >
                       Next
                     </button>
                     <button
                       onClick={() => handlePageChange(totalPages - 1)}
                       disabled={currentPage === totalPages - 1}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === totalPages - 1
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                      className={`px-3 py-1 rounded ${currentPage === totalPages - 1
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                           : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                      }`}
+                        }`}
                     >
                       Last
                     </button>

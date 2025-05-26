@@ -14,7 +14,7 @@ export default function PaymentAndDonation() {
   useEffect(() => {
     // Ensure client-side execution for localStorage
     if (typeof window === 'undefined') return;
-    
+
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (!token) {
@@ -26,9 +26,9 @@ export default function PaymentAndDonation() {
     const fetchWalletBalance = async () => {
       try {
         console.log('Fetching wallet balance...');
-        
+
         try {
-          const response = await fetch('http://localhost:8080/api/wallet/balance', {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/balance`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -38,7 +38,7 @@ export default function PaymentAndDonation() {
           });
 
           console.log('Response status:', response.status);
-          
+
           if (!response.ok) {
             throw new Error(`Server responded with status: ${response.status}`);
           }
@@ -54,7 +54,7 @@ export default function PaymentAndDonation() {
           setUsingMockData(false);
         } catch (fetchErr) {
           console.error('Fetch error details:', fetchErr);
-          
+
           // Use mock data for any fetch error (including CORS)
           console.log('API connection issue, using mock data temporarily');
           await new Promise(resolve => setTimeout(resolve, 800));
@@ -104,7 +104,7 @@ export default function PaymentAndDonation() {
             <p>Using estimated balance data. Backend connection is currently unavailable.</p>
           </div>
         )}
-        
+
         <div className="bg-white shadow rounded-lg p-6">
           {loading ? (
             <div className="text-center py-4">
@@ -124,7 +124,7 @@ export default function PaymentAndDonation() {
                   ${walletData?.balance.toFixed(2) || '0.00'}
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
                 <Link href="/payment-and-donation/topup" className="block">
                   <div className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-6 text-center transition-colors duration-200">
@@ -132,14 +132,14 @@ export default function PaymentAndDonation() {
                     <p className="mt-2">Add funds to your wallet</p>
                   </div>
                 </Link>
-                
+
                 <Link href="/payment-and-donation/transfer" className="block">
                   <div className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-6 text-center transition-colors duration-200">
                     <h3 className="text-xl font-bold">Transfer</h3>
                     <p className="mt-2">Send funds to others</p>
                   </div>
                 </Link>
-                
+
                 <Link href="/payment-and-donation/transactions" className="block">
                   <div className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-6 text-center transition-colors duration-200">
                     <h3 className="text-xl font-bold">Transactions</h3>

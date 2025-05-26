@@ -11,13 +11,13 @@ export default function TopUp() {
   const [success, setSuccess] = useState(null);
   const [method, setMethod] = useState('CREDIT_CARD');
   const [amount, setAmount] = useState('');
-  
+
   // Credit card fields
   const [cardNumber, setCardNumber] = useState('');
   const [cvv, setCvv] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cardholderName, setCardholderName] = useState('');
-  
+
   // Bank transfer fields
   const [bankName, setBankName] = useState('BCA');
   const [accountNumber, setAccountNumber] = useState('');
@@ -32,18 +32,19 @@ export default function TopUp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please login again.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('You must be logged in to top up your wallet');
-      }
-      
       let payload;
-      
+
       if (method === 'CREDIT_CARD') {
         payload = {
           amount: parseFloat(amount),
@@ -61,8 +62,8 @@ export default function TopUp() {
           accountNumber
         };
       }
-      
-      const response = await fetch('http://localhost:8080/api/wallet/topup', {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/topup`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,15 +71,15 @@ export default function TopUp() {
         },
         body: JSON.stringify(payload)
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Failed to process top-up');
       }
-      
+
       setSuccess(`Successfully topped up Rp${data.data.amount.toLocaleString('id-ID')}. New balance: Rp${data.data.balance.toLocaleString('id-ID')}`);
-      
+
       // Clear form
       setAmount('');
       setCardNumber('');
@@ -86,7 +87,7 @@ export default function TopUp() {
       setExpiryDate('');
       setCardholderName('');
       setAccountNumber('');
-      
+
       // Redirect after 2 seconds
       setTimeout(() => {
         router.push('/payment-and-donation');
@@ -101,15 +102,15 @@ export default function TopUp() {
   const formatCardNumber = (value) => {
     // Remove all non-digit characters
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    
+
     // Split into groups of 4 digits
     const matches = v.match(/\d{1,4}/g);
-    
+
     // Join with spaces if we have matches
     if (matches) {
       return matches.join(' ');
     }
-    
+
     // Return original input if no digits
     return value;
   };
@@ -117,12 +118,12 @@ export default function TopUp() {
   const formatExpiryDate = (value) => {
     // Remove all non-digit characters
     const v = value.replace(/[^0-9]/gi, '');
-    
+
     // Add slash after first 2 digits
     if (v.length >= 2) {
       return v.substring(0, 2) + '/' + v.substring(2, 4);
     }
-    
+
     return v;
   };
 
@@ -147,7 +148,7 @@ export default function TopUp() {
               <p>{error}</p>
             </div>
           )}
-          
+
           {success && (
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
               <p className="font-bold">Success</p>
@@ -155,7 +156,7 @@ export default function TopUp() {
               <p className="mt-2">Redirecting back to wallet...</p>
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-bold mb-2">Amount</label>
@@ -173,7 +174,7 @@ export default function TopUp() {
                 />
               </div>
             </div>
-            
+
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-bold mb-2">Payment Method</label>
               <div className="flex space-x-4">
@@ -199,11 +200,11 @@ export default function TopUp() {
                 </label>
               </div>
             </div>
-            
+
             {method === 'CREDIT_CARD' ? (
               <div className="bg-gray-50 p-4 rounded-lg mb-6">
                 <h3 className="text-lg font-semibold mb-4">Credit Card Details</h3>
-                
+
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">Card Number</label>
                   <input
@@ -219,7 +220,7 @@ export default function TopUp() {
                     required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2">CVV</label>
@@ -233,7 +234,7 @@ export default function TopUp() {
                       required
                     />
                   </div>
-                  
+
                   <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2">Expiry Date</label>
                     <input
@@ -249,7 +250,7 @@ export default function TopUp() {
                       required
                     />
                   </div>
-                  
+
                   <div className="mb-4 md:col-span-3">
                     <label className="block text-gray-700 text-sm font-bold mb-2">Cardholder Name</label>
                     <input
@@ -266,7 +267,7 @@ export default function TopUp() {
             ) : (
               <div className="bg-gray-50 p-4 rounded-lg mb-6">
                 <h3 className="text-lg font-semibold mb-4">Bank Transfer Details</h3>
-                
+
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">Bank Name</label>
                   <select
@@ -282,7 +283,7 @@ export default function TopUp() {
                     <option value="CIMB Niaga">CIMB Niaga</option>
                   </select>
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">Account Number</label>
                   <input
@@ -296,7 +297,7 @@ export default function TopUp() {
                 </div>
               </div>
             )}
-            
+
             <div className="flex items-center justify-between">
               <button
                 type="submit"

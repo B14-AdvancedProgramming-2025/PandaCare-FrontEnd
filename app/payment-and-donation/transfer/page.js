@@ -34,40 +34,35 @@ export default function Transfer() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setTransferStatus('pending');
-    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please login again.');
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('You must be logged in to make a transfer');
-      }
-      
-      const payload = {
-        receiverEmail: formData.receiverEmail,
-        amount: parseFloat(formData.amount),
-        note: formData.note
-      };
-      
-      const response = await fetch('http://localhost:8080/api/wallet/transfer', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/transfer`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          receiverEmail: formData.receiverEmail,
+          amount: parseFloat(formData.amount),
+          note: formData.note
+        }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Failed to process transfer');
       }
-      
+
       setTransferResult(data.data);
       setTransferStatus('success');
-      
+
       // Clear form
       setFormData({
         receiverEmail: '',
@@ -101,7 +96,7 @@ export default function Transfer() {
             required
           />
         </div>
-        
+
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="amount">
             Amount
@@ -122,7 +117,7 @@ export default function Transfer() {
             />
           </div>
         </div>
-        
+
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="note">
             Note (Optional)
@@ -137,7 +132,7 @@ export default function Transfer() {
             rows="3"
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <button
             type="submit"
@@ -162,39 +157,39 @@ export default function Transfer() {
         </div>
       );
     }
-    
+
     if (transferStatus === 'success' && transferResult) {
       return (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          
+
           <h3 className="text-2xl font-bold text-green-700 mb-4">Transfer Successful!</h3>
-          
+
           <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
             <div className="grid grid-cols-2 gap-4 text-left">
               <div className="text-gray-600">Amount:</div>
               <div className="font-semibold text-right">Rp {transferResult.amount.toLocaleString('id-ID')}</div>
-              
+
               <div className="text-gray-600">Recipient:</div>
               <div className="font-semibold text-right">{transferResult.receiver}</div>
-              
+
               <div className="text-gray-600">Sender:</div>
               <div className="font-semibold text-right">{transferResult.sender}</div>
-              
+
               {transferResult.note && (
                 <>
                   <div className="text-gray-600">Note:</div>
                   <div className="font-semibold text-right">{transferResult.note}</div>
                 </>
               )}
-              
+
               <div className="text-gray-600">Your New Balance:</div>
               <div className="font-semibold text-right">Rp {transferResult.senderBalance.toLocaleString('id-ID')}</div>
             </div>
           </div>
-          
+
           <Link href="/payment-and-donation">
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline">
               Back to Wallet
@@ -203,7 +198,7 @@ export default function Transfer() {
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -227,7 +222,7 @@ export default function Transfer() {
             <p>{error}</p>
           </div>
         )}
-        
+
         <div className="bg-white shadow rounded-lg p-6">
           {transferStatus ? renderTransferStatus() : renderTransferForm()}
         </div>

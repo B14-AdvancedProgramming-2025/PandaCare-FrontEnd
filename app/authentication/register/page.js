@@ -93,7 +93,7 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/auth/register/${userType.toLowerCase()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register/${userType.toLowerCase()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
