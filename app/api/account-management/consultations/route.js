@@ -85,14 +85,14 @@ export async function GET(request) {
     let consultationsResponse;
     let consultationUrl;
     if (userRole === 'PACILIAN') {
-      consultationUrl = `http://localhost:8080/api/scheduling/consultations/patient/${actualUserId}`;
+      consultationUrl = `http://localhost:8080/api/scheduling/pacilian/consultations`;
       consultationsResponse = await fetch(consultationUrl, {
         headers: {
           'Authorization': authHeader
         }
       });
     } else if (userRole === 'CAREGIVER') {
-      consultationUrl = `http://localhost:8080/api/scheduling/consultations/caregiver/${actualUserId}`;
+      consultationUrl = `http://localhost:8080/api/scheduling/caregiver/consultations`;
       consultationsResponse = await fetch(consultationUrl, {
         headers: {
           'Authorization': authHeader

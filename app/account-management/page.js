@@ -190,7 +190,7 @@ export default function AccountManagement() {
 
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
-        router.push("/authentication/login");
+        router.push("/authentication");
       } catch (error) {
         console.error("Error deleting account:", error);
         alert(error.message);
