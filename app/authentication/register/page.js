@@ -10,8 +10,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
-  // Common fields
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,10 +20,8 @@ export default function Register() {
     phone: ''
   });
 
-  // Pacilian specific fields
   const [medicalHistory, setMedicalHistory] = useState(['']);
-  
-  // Caregiver specific fields
+
   const [specialty, setSpecialty] = useState('');
   const [workingSchedule, setWorkingSchedule] = useState(['']);
 
@@ -40,7 +37,6 @@ export default function Register() {
     setUserType(e.target.value);
   };
 
-  // Handle medical history array changes
   const handleMedicalHistoryChange = (index, value) => {
     const updatedMedicalHistory = [...medicalHistory];
     updatedMedicalHistory[index] = value;
@@ -57,7 +53,6 @@ export default function Register() {
     setMedicalHistory(updatedMedicalHistory);
   };
 
-  // Handle working schedule array changes
   const handleWorkingScheduleChange = (index, value) => {
     const updatedWorkingSchedule = [...workingSchedule];
     updatedWorkingSchedule[index] = value;
@@ -80,7 +75,6 @@ export default function Register() {
     setError(null);
     setSuccess(null);
 
-    // Prepare request body based on user type
     let requestBody = {
       ...formData,
     };
@@ -114,8 +108,7 @@ export default function Register() {
       }
 
       setSuccess('Registration successful! Redirecting to login page...');
-      
-      // Redirect to login page after successful registration
+
       setTimeout(() => {
         router.push('/authentication');
       }, 2000);
@@ -130,7 +123,7 @@ export default function Register() {
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
         <h1 className="text-2xl font-bold text-center mb-6">Register for PandaCare</h1>
-        
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -142,9 +135,8 @@ export default function Register() {
             {success}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit}>
-          {/* User Type Selection */}
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Register as
@@ -173,7 +165,6 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Common Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="mb-4">
               <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
@@ -190,7 +181,7 @@ export default function Register() {
                 required
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
                 Password*
@@ -222,7 +213,7 @@ export default function Register() {
                 required
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="nik" className="block text-gray-700 text-sm font-bold mb-2">
                 NIK (National ID)*
@@ -272,14 +263,13 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Conditional Fields Based on User Type */}
           {userType === 'PACILIAN' ? (
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">
                 Medical History
               </label>
               {medicalHistory.map((item, index) => (
-                <div key={index} className="flex mb-2">
+                <div key={index} className="flex items-center mb-2 gap-2">
                   <input
                     type="text"
                     value={item}
@@ -290,18 +280,22 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={() => removeMedicalHistoryField(index)}
-                    className="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    className="flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     disabled={medicalHistory.length === 1}
                   >
-                    -
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
                   </button>
                   {index === medicalHistory.length - 1 && (
                     <button
                       type="button"
                       onClick={addMedicalHistoryField}
-                      className="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                      className="flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer bg-green-50 hover:bg-green-100 text-green-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                     >
-                      +
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
                     </button>
                   )}
                 </div>
@@ -323,13 +317,13 @@ export default function Register() {
                   required
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
                   Working Schedule
                 </label>
                 {workingSchedule.map((item, index) => (
-                  <div key={index} className="flex mb-2">
+                  <div key={index} className="flex items-center mb-2 gap-2">
                     <input
                       type="text"
                       value={item}
@@ -340,18 +334,22 @@ export default function Register() {
                     <button
                       type="button"
                       onClick={() => removeWorkingScheduleField(index)}
-                      className="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                      className="flex items-center justify-center w-10 h-10 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                       disabled={workingSchedule.length === 1}
                     >
-                      -
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
                     </button>
                     {index === workingSchedule.length - 1 && (
                       <button
                         type="button"
                         onClick={addWorkingScheduleField}
-                        className="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        className="flex items-center justify-center w-10 h-10 rounded-full bg-green-50 hover:bg-green-100 text-green-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                       >
-                        +
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
                       </button>
                     )}
                   </div>
@@ -359,7 +357,7 @@ export default function Register() {
               </div>
             </>
           )}
-          
+
           <div className="flex items-center justify-between mt-6">
             <button
               type="submit"
@@ -369,7 +367,7 @@ export default function Register() {
               {loading ? 'Registering...' : 'Register'}
             </button>
           </div>
-          
+
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
