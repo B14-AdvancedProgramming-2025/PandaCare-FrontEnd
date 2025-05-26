@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { caregiverApi } from '../../api/scheduling/api';
+import { chatApi } from '../../api/chat/api';
 
 export default function CaregiverDashboard() {
   const router = useRouter();
@@ -482,6 +483,22 @@ export default function CaregiverDashboard() {
     setModifyScheduleData({ date: '', startTime: '', endTime: '' });
   };
 
+  const handleChatWithPacilian = async (consultation) => {
+    try {
+      const caregiverId = getCurrentUserId();
+      const pacilianId = consultation.pacilianId;
+
+      // Get or create chat room
+      const roomResponse = await chatApi.getChatRoom(pacilianId, caregiverId);
+      const roomId = roomResponse.roomId;
+
+      // Navigate to chat page with room details
+      router.push(`/chat?roomId=${roomId}&recipientId=${pacilianId}&recipientName=${consultation.pacilianName || 'Pacilian'}&recipientType=Pacilian`);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      setError('Failed to open chat. Please try again.');
+    }
+  };
 
   // Helper function to get current user ID from token
   const getCurrentUserId = () => {
@@ -493,7 +510,7 @@ export default function CaregiverDashboard() {
     try {
       // Decode JWT token to get user ID
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.sub || payload.userId || payload.id || payload.email;
+      return payload.userId || payload.sub || payload.id || payload.email;
     } catch (error) {
       console.error('Error decoding token:', error);
       return localStorage.getItem('userId'); // Fallback
@@ -1031,6 +1048,19 @@ export default function CaregiverDashboard() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 {loading ? 'Processing...' : 'Reject'}
+                              </button>
+                            </div>
+                          )}
+                          {consultation.status === 'ACCEPTED' && (
+                            <div className="flex space-x-3 ml-6">
+                              <button
+                                onClick={() => handleChatWithPacilian(consultation)}
+                                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-medium"
+                              >
+                                <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                Chat with Pacilian
                               </button>
                             </div>
                           )}

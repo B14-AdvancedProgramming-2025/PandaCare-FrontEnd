@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { pacilianApi } from '../../api/scheduling/api';
+import { chatApi } from '../../api/chat/api';
 
 export default function PacilianDashboard() {
   const router = useRouter();
@@ -301,6 +302,39 @@ export default function PacilianDashboard() {
     }
 
     setLoading(false);
+  };
+
+  const handleChatWithCaregiver = async (consultation) => {
+    try {
+      const pacilianId = getCurrentUserId();
+      const caregiverId = consultation.caregiverId;
+
+      // Get or create chat room
+      const roomResponse = await chatApi.getChatRoom(pacilianId, caregiverId);
+      const roomId = roomResponse.roomId;
+
+      // Navigate to chat page with room details
+      router.push(`/chat?roomId=${roomId}&recipientId=${caregiverId}&recipientName=${consultation.caregiverName || 'Caregiver'}&recipientType=Caregiver`);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      setError('Failed to open chat. Please try again.');
+    }
+  };
+
+  const getCurrentUserId = () => {
+    if (typeof window === 'undefined') return null;
+
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      // Decode JWT token to get user ID
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.sub || payload.id || payload.email;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return localStorage.getItem('userId'); // Fallback
+    }
   };
 
   const handleLogout = () => {
@@ -666,18 +700,31 @@ export default function PacilianDashboard() {
               <div className="space-y-3">
                 {consultations.map((consultation, index) => (
                   <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium">Dr. {consultation.caregiverName || consultation.caregiverId}</p>
                       <p className="text-sm text-gray-600">
                         {new Date(consultation.startTime).toLocaleString()} - {new Date(consultation.endTime).toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">Status: {consultation.status}</p>
                     </div>
-                    <div className={`px-3 py-1 rounded text-sm ${consultation.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
-                      consultation.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                      {consultation.status}
+                    <div className="flex items-center space-x-3">
+                      <div className={`px-3 py-1 rounded text-sm ${consultation.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                        consultation.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {consultation.status}
+                      </div>
+                      {consultation.status === 'ACCEPTED' && (
+                        <button
+                          onClick={() => handleChatWithCaregiver(consultation)}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-medium text-sm"
+                        >
+                          <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          Chat with Caregiver
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
