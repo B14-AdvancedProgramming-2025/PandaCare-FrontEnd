@@ -65,5 +65,41 @@ export const chatApi = {
       console.error('Error getting message history:', error);
       throw error;
     }
+  },
+
+  async getPacilianChatRooms(pacilianId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/chat/rooms/pacilian/${pacilianId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting pacilian chat rooms:', error);
+      throw error;
+    }
+  },
+
+  async getCaregiverChatRooms(caregiverId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/chat/rooms/caregiver/${caregiverId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting caregiver chat rooms:', error);
+      throw error;
+    }
   }
 }; 

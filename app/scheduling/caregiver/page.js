@@ -598,9 +598,6 @@ export default function CaregiverDashboard() {
               : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-200'
               }`}
           >
-            <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
             My Schedules
           </button>
           <button
@@ -610,44 +607,9 @@ export default function CaregiverDashboard() {
               : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-200'
               }`}
           >
-            <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-            </svg>
             Pending Consultations
           </button>
         </div>
-
-        {/* Enhanced Debug info */}
-        {mounted && (
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 p-6 rounded-xl mb-6 text-sm shadow-sm">
-            <div className="flex items-center mb-3">
-              <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="font-semibold text-gray-700">Debug Information</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white p-3 rounded-lg border">
-                <p className="text-gray-600 text-xs uppercase tracking-wide">Active Tab</p>
-                <p className="font-medium text-gray-900">{activeTab}</p>
-              </div>
-              <div className="bg-white p-3 rounded-lg border">
-                <p className="text-gray-600 text-xs uppercase tracking-wide">Loading Status</p>
-                <p className="font-medium text-gray-900">{loading.toString()}</p>
-              </div>
-              <div className="bg-white p-3 rounded-lg border">
-                <p className="text-gray-600 text-xs uppercase tracking-wide">User ID</p>
-                <p className="font-medium text-gray-900 truncate">{getCurrentUserId()}</p>
-              </div>
-            </div>
-            <details className="mt-4">
-              <summary className="cursor-pointer font-medium text-gray-700 hover:text-gray-900 transition-colors">Show localStorage contents</summary>
-              <pre className="mt-3 text-xs bg-white p-4 rounded-lg border overflow-auto max-h-40">
-                {JSON.stringify(debugLocalStorage(), null, 2)}
-              </pre>
-            </details>
-          </div>
-        )}
 
         {/* Only show content if not in error state */}
         {!error.includes('Access denied') && (
