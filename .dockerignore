@@ -1,0 +1,29 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+node_modules
+
+# Local Environment Variables
+.env*.local
+
+# Next.js build output
+.next
+out
+
+# Production build files
+.DS_Store
+*.pem
+
+# Debugging
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw? 

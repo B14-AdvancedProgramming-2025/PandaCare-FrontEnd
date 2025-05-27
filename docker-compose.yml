@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  pandacare-fe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3003:3000'
+    environment:
+      - NODE_ENV=production
+      # Add any other environment variables your application needs
+    restart: always
