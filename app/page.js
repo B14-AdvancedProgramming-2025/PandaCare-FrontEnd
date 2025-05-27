@@ -9,6 +9,8 @@ export default function Home() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tokenError, setTokenError] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     // Ensure client-side execution for localStorage
@@ -69,6 +71,10 @@ export default function Home() {
 
         const decodedData = JSON.parse(jsonPayload);
         console.log("Decoded data:", decodedData);
+        
+        // Extract user ID from token - could be in sub, id, or userId fields
+        const extractedUserId = decodedData.id || decodedData.sub || decodedData.userId;
+        setUserId(extractedUserId);
 
         // Set user data from token
         setUserData({
@@ -95,6 +101,44 @@ export default function Home() {
     router.push('/authentication');
   };
 
+  const handleRatingButtonClick = async () => {
+    try {
+      // First check if we need to fetch the real user ID (for caregivers)
+      const token = localStorage.getItem('token');
+      if (userData?.role === 'CAREGIVER' && userId) {
+        // Use email as userId to fetch the actual ID
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/ratings/id/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });        
+        if (response.ok) {
+          const data = await response.json();
+          // Extract the real caregiver ID from the response
+          const realCaregiverId = data.data;
+          
+          // Navigate to caregiver rating page with the real ID
+          router.push(`/rating/caregiver/${realCaregiverId}`);
+        } else {
+          console.error('Failed to fetch caregiver ID:', response.status);
+          // Fall back to using the current ID if fetch fails
+          router.push(`/rating/caregiver/${userId}`);
+        }
+      } else {
+        // For non-caregivers, just go to the pacilian rating page
+        router.push('/rating/pacilian');
+      }
+    } catch (error) {
+      console.error('Error fetching caregiver ID:', error);
+      // Fall back to regular navigation on error
+      if (userData?.role === 'CAREGIVER' && userId) {
+        router.push(`/rating/caregiver/${userId}`);
+      } else {
+        router.push('/rating/pacilian');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -104,7 +148,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 relative">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">PandaCare Home</h1>
@@ -220,6 +264,31 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Floating Rating Button */}
+      <div 
+        className="fixed bottom-8 right-8 z-50"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <button
+          onClick={handleRatingButtonClick}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          aria-label="Ratings"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+        </button>
+        
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className="absolute bottom-full right-0 mb-2 bg-gray-800 text-white text-sm px-3 py-2 rounded shadow-lg whitespace-nowrap">
+            {userData?.role === 'CAREGIVER' ? 'View My Ratings' : 'Rate Caregivers'}
+            <div className="absolute bottom-0 right-6 transform translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
