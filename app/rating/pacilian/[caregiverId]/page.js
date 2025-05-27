@@ -10,6 +10,7 @@ export default function PacilianRatingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
+  const [doctorInfo, setDoctorInfo] = useState(null);
   
   // Form state for new rating
   const [newRating, setNewRating] = useState({
@@ -18,62 +19,77 @@ export default function PacilianRatingPage() {
   });
   
   useEffect(() => {
-    // Get user info from local storage
+    // Get user info from JWT token instead of userInfo
     try {
-      const storedUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-      setUserInfo(storedUserInfo);
-      
-      // Uncomment these for production to enforce authentication
-      // If not logged in or not a pacilian, redirect
-      // if (!storedUserInfo || !storedUserInfo.id) {
-      //   router.push('/authentication');
-      //   return;
-      // }
-      
-      // if (storedUserInfo.role !== 'PACILIAN') {
-      //   router.push('/dashboard');
-      //   return;
-      // }
+      const token = localStorage.getItem('token');
+      if (token && token.includes('.')) {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+          const jsonPayload = atob(paddedBase64);
+          const decodedData = JSON.parse(jsonPayload);
+          
+          console.log("Decoded token data:", decodedData);
+          
+          setUserInfo({
+            id: decodedData.sub || decodedData.id, // Use sub as the ID
+            name: decodedData.name || decodedData.sub || 'User',
+            role: decodedData.role || decodedData.roles || 'USER',
+            email: decodedData.email || decodedData.user_email,
+          });
+        }
+      } else {
+        // No token or invalid token - redirect to login in production
+        console.warn("No valid token found");
+        // router.push('/authentication');
+        // return;
+      }
     } catch (err) {
-      console.error('Failed to parse user info:', err);
-      // Set a default user info object if parsing fails
+      console.error('Failed to parse token:', err);
       setUserInfo({});
     }
     
     // Fetch ratings for this caregiver
     fetchCaregiverRatings();
+    
+    // Optionally fetch doctor info if you have an endpoint
+    fetchDoctorInfo();
   }, [caregiverId, router]);
+  
+  const fetchDoctorInfo = async () => {
+    try {
+      // Try to get doctor info
+      const response = await fetch(`http://localhost:8080/api/doctors/${caregiverId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Extract doctor info based on your API
+        const doctorData = data.data || data;
+        setDoctorInfo(doctorData);
+      } else {
+        console.warn(`Couldn't fetch doctor info: ${response.status}`);
+        // Set default info based on the ID
+        setDoctorInfo({
+          id: caregiverId,
+          name: `Doctor ${caregiverId.substring(0, 8)}...`,
+          specialization: "Healthcare Provider"
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching doctor info:", err);
+      // Set default info on error
+      setDoctorInfo({
+        id: caregiverId,
+        name: `Doctor ${caregiverId.substring(0, 8)}...`,
+        specialization: "Healthcare Provider"
+      });
+    }
+  };
   
   const fetchCaregiverRatings = async () => {
     try {
       setLoading(true);
-      
-      // For testing purposes - use mock data if API is not available
-      // Comment this out when your API is working
-      /*
-      const mockData = [
-        { 
-          id: "1", 
-          caregiverId: caregiverId, 
-          pacilianId: "user123", 
-          value: 5, 
-          comment: "Excellent caregiver, very attentive and professional.",
-          timestamp: "2023-05-10T14:30:00Z"
-        },
-        { 
-          id: "2", 
-          caregiverId: caregiverId, 
-          pacilianId: "user456", 
-          value: 4, 
-          comment: "Good service overall, would recommend.",
-          timestamp: "2023-05-12T09:15:00Z"
-        }
-      ];
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-      setRatings(mockData);
-      setLoading(false);
-      return;
-      */
       
       // Real API call
       const response = await fetch(`http://localhost:8080/api/ratings/doctor/${caregiverId}`);
@@ -129,20 +145,19 @@ export default function PacilianRatingPage() {
     }
     
     try {
-      const response = await fetch('http://localhost:8080/api/ratings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          caregiverId: caregiverId,
-          pacilianId: userInfo.id,
-          value: newRating.value,
-          comment: newRating.comment
-        })
-      });
+    const response = await fetch('http://localhost:8080/api/ratings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({
+        caregiverId: caregiverId,
+        pacilianEmail: userInfo.name,
+        value: newRating.value,
+        comment: newRating.comment
+      })
+    });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -153,6 +168,7 @@ export default function PacilianRatingPage() {
       setNewRating({ value: 5, comment: '' });
       fetchCaregiverRatings();
     } catch (err) {
+      console.log(userInfo.name)
       console.error('Error submitting rating:', err);
       setError(err.message || 'An error occurred while submitting your rating');
     }
@@ -209,9 +225,26 @@ export default function PacilianRatingPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Caregiver Ratings</h1>
-          <p className="text-gray-600">Share your experience or view what others are saying</p>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+            {doctorInfo?.name || `Doctor ${caregiverId.substring(0, 8)}...`}
+          </h1>
+          {doctorInfo?.specialization && (
+            <span className="inline-block bg-blue-100 text-blue-800 text-sm px-2.5 py-0.5 rounded">
+              {doctorInfo.specialization}
+            </span>
+          )}
+          <p className="text-gray-600 mt-4">Share your experience or view what others are saying</p>
+          
+          {userInfo?.id ? (
+            <div className="mt-2 text-sm text-green-600">
+              Logged in as: {userInfo.name} ({userInfo.role})
+            </div>
+          ) : (
+            <div className="mt-2 text-sm text-yellow-600">
+              You are not logged in. Please <button onClick={() => router.push('/authentication')} className="underline">login</button> to submit a rating.
+            </div>
+          )}
         </div>
         
         {/* Rating summary card */}
@@ -246,7 +279,7 @@ export default function PacilianRatingPage() {
         </div>
         
         {/* Rating submission form */}
-        {!userHasRated ? (
+        {userInfo?.id && !userHasRated ? (
           <div className="bg-white shadow-md rounded-lg p-6 mb-10">
             <h2 className="text-xl font-semibold mb-6 text-gray-800">Share Your Experience</h2>
             <form onSubmit={submitRating}>
@@ -296,7 +329,7 @@ export default function PacilianRatingPage() {
               </button>
             </form>
           </div>
-        ) : (
+        ) : userInfo?.id && userHasRated ? (
           <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg mb-10">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -307,6 +340,21 @@ export default function PacilianRatingPage() {
               <div className="ml-3">
                 <p className="text-sm text-green-700">
                   You've already submitted a rating for this caregiver. Thank you for your feedback!
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-10">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Please log in to submit a rating for this caregiver.
                 </p>
               </div>
             </div>

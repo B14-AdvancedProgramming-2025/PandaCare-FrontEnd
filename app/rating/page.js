@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export default function RatingListPage() {
   const router = useRouter();
@@ -13,93 +12,69 @@ export default function RatingListPage() {
   const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
-    // Get user info from local storage
-    try {
-      const storedUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-      setUserInfo(storedUserInfo);
-      
-      // For production, uncomment this to enforce authentication
-      // if (!storedUserInfo || !storedUserInfo.id) {
-      //   router.push('/authentication');
-      //   return;
-      // }
-    } catch (err) {
-      console.error('Failed to parse user info:', err);
-      setUserInfo({});
+    // Get user info from token
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        // Try to parse JWT token
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+          const jsonPayload = atob(paddedBase64);
+          const decodedData = JSON.parse(jsonPayload);
+          
+          setUserInfo({
+            name: decodedData.name || decodedData.sub || 'User',
+            role: decodedData.role || decodedData.roles || 'USER',
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing token:', e);
+      }
     }
     
     // Fetch all doctors
     fetchDoctors();
-  }, [router]);
+  }, []);
   
   const fetchDoctors = async () => {
     try {
       setLoading(true);
       
-      // Try to fetch from doctors API
-      try {
-        const response = await fetch('http://localhost:8080/api/ratings/doctors');
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Extract data based on your API response structure
-          const doctorsArray = data.data || [];
-          console.log("Fetched doctors:", doctorsArray);
-          setDoctors(doctorsArray);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.log("Doctors API not available, trying alternative...");
-      }
+      // Try API endpoint
+      const response = await fetch('http://localhost:8080/api/ratings/doctors');
       
-      // If doctors API fails, try to get doctors from ratings
-      try {
-        const ratingsResponse = await fetch('http://localhost:8080/api/ratings');
+      if (response.ok) {
+        // Get data as direct array
+        const data = await response.json();
+        console.log("API Response:", data);
         
-        if (ratingsResponse.ok) {
-          const ratingsData = await ratingsResponse.json();
-          const ratings = ratingsData.data || [];
-          
-          // Extract unique doctors and calculate ratings
-          const doctorMap = new Map();
-          
-          ratings.forEach(rating => {
-            if (!doctorMap.has(rating.caregiverId)) {
-              doctorMap.set(rating.caregiverId, {
-                id: rating.caregiverId,
-                name: `Doctor ${rating.caregiverId.substring(0, 8)}...`,
-                specialization: "Unknown",
-                totalRatings: 0,
-                totalValue: 0,
-                averageRating: 0
-              });
-            }
-            
-            const doctorData = doctorMap.get(rating.caregiverId);
-            doctorData.totalRatings++;
-            doctorData.totalValue += rating.value;
-            doctorData.averageRating = doctorData.totalValue / doctorData.totalRatings;
-          });
-          
-          const doctorsFromRatings = Array.from(doctorMap.values());
-          console.log("Derived doctors from ratings:", doctorsFromRatings);
-          setDoctors(doctorsFromRatings);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error("Failed to get doctors from ratings:", error);
+        // Map to the format our UI expects
+        const formattedDoctors = data.map(doctor => ({
+          id: doctor.caregiverId,
+          name: doctor.caregiverName || `Doctor ${doctor.caregiverId.substring(0, 8)}`,
+          averageRating: doctor.averageRating || 0,
+          totalRatings: doctor.totalRatings || 0,
+          // Add defaults for missing fields
+          specialization: doctor.specialization || "General Practitioner",
+          imageUrl: doctor.imageUrl || null
+        }));
+        
+        setDoctors(formattedDoctors);
+      } else {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
+    } catch (err) {
+      console.error('Error fetching doctors:', err);
+      setError('Failed to load doctors. Please try again later.');
       
-      // If all else fails, use mock data
-      console.log("Using mock data as fallback");
-      const mockData = [
+      // Use mock data for development
+      setDoctors([
         {
           id: "10d4096b-6048-4c80-b041-aca74d482df6",
           name: "Dr. Sarah Johnson",
           specialization: "Cardiologist",
-          experience: 12,
           averageRating: 4.7,
           totalRatings: 48,
           imageUrl: "https://randomuser.me/api/portraits/women/45.jpg"
@@ -108,44 +83,11 @@ export default function RatingListPage() {
           id: "2a45e7b9-d56f-4321-98c7-b3dfea76e01a",
           name: "Dr. Michael Chen",
           specialization: "Neurologist",
-          experience: 8,
           averageRating: 4.5,
           totalRatings: 32,
           imageUrl: "https://randomuser.me/api/portraits/men/22.jpg"
-        },
-        {
-          id: "5fc3a9e7-8d1b-487c-ae91-56d56af8d720",
-          name: "Dr. Emily Wilson",
-          specialization: "Pediatrician",
-          experience: 15,
-          averageRating: 4.9,
-          totalRatings: 67,
-          imageUrl: "https://randomuser.me/api/portraits/women/33.jpg"
-        },
-        {
-          id: "8e72fba4-3c17-4409-8b5d-ec92d9e62d5f",
-          name: "Dr. Robert Garcia",
-          specialization: "Orthopedic Surgeon",
-          experience: 20,
-          averageRating: 4.6,
-          totalRatings: 52,
-          imageUrl: "https://randomuser.me/api/portraits/men/54.jpg"
-        },
-        {
-          id: "c18d32e5-9a75-40e7-b7c4-d1b5cfd82438",
-          name: "Dr. Jennifer Lee",
-          specialization: "Dermatologist",
-          experience: 7,
-          averageRating: 4.4,
-          totalRatings: 29,
-          imageUrl: "https://randomuser.me/api/portraits/women/68.jpg"
         }
-      ];
-      
-      setDoctors(mockData);
-    } catch (err) {
-      console.error('Error fetching doctors:', err);
-      setError(err.message || 'Failed to load doctors');
+      ]);
     } finally {
       setLoading(false);
     }
@@ -195,23 +137,6 @@ export default function RatingListPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-red-100 text-red-700 p-4 rounded-lg shadow-md">
-          <p className="font-semibold">Error:</p>
-          <p>{error}</p>
-          <button 
-            onClick={fetchDoctors}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
@@ -221,6 +146,11 @@ export default function RatingListPage() {
           {userInfo?.role && (
             <div className="mt-2 inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
               Logged in as: {userInfo.role}
+            </div>
+          )}
+          {error && (
+            <div className="mt-2 text-sm text-red-600">
+              {error} <button onClick={fetchDoctors} className="underline">Retry</button>
             </div>
           )}
         </div>
@@ -282,12 +212,6 @@ export default function RatingListPage() {
                       <span className="ml-2 text-gray-600">{(doctor.averageRating || 0).toFixed(1)}</span>
                       <span className="ml-1 text-gray-500 text-sm">({doctor.totalRatings || 0})</span>
                     </div>
-                    
-                    {doctor.experience && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        Experience: {doctor.experience} years
-                      </div>
-                    )}
                   </div>
                   
                   <div className="mt-6">
