@@ -65,11 +65,11 @@ export async function GET(request) {
 
     // The backend /api/profile/me returns a structure like: { message: "...", result: { userData }, statusCode: ... }
     // We need to return the content of data.result to the frontend page
-    if (data && data.result) {
-      console.log('[Profile Route GET] Successfully fetched and parsed profile data:', data.result);
-      return NextResponse.json(data.result); // Return the user data object
+    if (data && data.hasOwnProperty('result')) { // MODIFIED: Check for existence of 'result' key, allowing its value to be null
+      console.log('[Profile Route GET] Successfully fetched and parsed profile data (could be null):', data.result);
+      return NextResponse.json(data.result); // Return the user data object (which might be null)
     } else {
-      console.error('[Profile Route GET] Profile data from /api/profile/me is not in the expected format. Received:', data);
+      console.error('[Profile Route GET] Profile data from /api/profile/me is not in the expected format (missing result key or bad data object). Received:', data);
       return NextResponse.json(
         { error: "Profile data received from backend is not in the expected format." },
         { status: 500 } // Internal server error, as the BFF received unexpected data

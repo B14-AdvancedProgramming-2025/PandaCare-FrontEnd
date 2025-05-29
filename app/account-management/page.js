@@ -43,16 +43,30 @@ export default function AccountManagement() {
 
       const data = await response.json();
       setUserData(data);
-      setFormData({
-        name: data.name || "",
-        address: data.address || "",
-        phone: data.phone || "",
-        type: data.type || "",
-        medicalHistory: data.medicalHistory || [],
-        specialty: data.specialty || "",
-        // workingSchedule is populated from userData for display purposes
-        workingSchedule: data.workingSchedule || [], 
-      });
+
+      if (data) { // ADDED: Check if data is not null before trying to access its properties
+        setFormData({
+          name: data.name || "",
+          address: data.address || "",
+          phone: data.phone || "",
+          type: data.type || "",
+          medicalHistory: data.medicalHistory || [],
+          specialty: data.specialty || "",
+          // workingSchedule is populated from userData for display purposes
+          workingSchedule: data.workingSchedule || [], 
+        });
+      } else {
+        // If data is null (profile is empty), reset formData to default empty state
+        setFormData({
+          name: "",
+          address: "",
+          phone: "",
+          type: "",
+          medicalHistory: [],
+          specialty: "",
+          workingSchedule: [],
+        });
+      }
       setLoading(false);
     } catch (error) {
       console.error("Error fetching user data:", error);
