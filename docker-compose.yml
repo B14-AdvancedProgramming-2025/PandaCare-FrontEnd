@@ -9,5 +9,5 @@ services:
       - '3003:3000'
     environment:
       - NODE_ENV=production
-      # Add any other environment variables your application needs
+      - NEXT_PUBLIC_BACKEND_URL=https://159.89.209.87
     restart: always
