@@ -28,7 +28,7 @@ export default function PaymentAndDonation() {
         console.log('Fetching wallet balance...');
 
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/balance`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://pandacare.abhipraya.dev'}/api/wallet/balance`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,

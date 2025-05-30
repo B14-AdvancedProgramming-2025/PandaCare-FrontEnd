@@ -28,7 +28,7 @@ export default function Authentication() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://pandacare.abhipraya.dev'}/api/auth/login`,
         {
           method: "POST",
           headers: {

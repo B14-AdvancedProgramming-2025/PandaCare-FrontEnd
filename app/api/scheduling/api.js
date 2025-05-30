@@ -1,4 +1,4 @@
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/scheduling`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://pandacare.abhipraya.dev'}/api/scheduling`;
 
 // Helper function to get auth token from localStorage
 const getAuthToken = () => {
